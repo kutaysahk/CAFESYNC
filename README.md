@@ -11,7 +11,7 @@ and end-to-end browser tests.
 
 ## Live demo
 
-https://cafesync-XXXX.onrender.com — log in with `admin/admin` to see
+https://cafesync-jke6.onrender.com — create an account to see.
 the operations dashboard, or sign up as a fresh user to order from the menu.
 
 ## What's in the box
@@ -64,11 +64,8 @@ uvicorn main:app --reload
 Required `.env` variables:
 ```
 SESSION_SECRET=<random 32+ char string>
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=admin
-RP_ID=localhost
-RP_NAME=CafeSync
-WEBAUTHN_ORIGINS=http://localhost:8000
+ADMIN_USERNAME=********
+ADMIN_PASSWORD=********
 ```
 
 ## Running tests
