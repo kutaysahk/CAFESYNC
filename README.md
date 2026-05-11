@@ -1,30 +1,109 @@
-# CAFESYNC
-FastAPI backend for CafeSync. Features robust technical monitoring, connection pooling, and containerized SQL Server integration for high-availability performance tracking.
+# CafeSync
 
-# CafeSync Technical Monitoring API
+[![Test and Deploy](https://github.com/kutaysahk/cafesync/actions/workflows/test-and-deploy.yml/badge.svg)](https://github.com/kutaysahk/cafesync/actions/workflows/test-and-deploy.yml)
+![Coverage](https://img.shields.io/badge/coverage-92.3%25-brightgreen)
+![Python](https://img.shields.io/badge/python-3.10-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-async-009688)
 
-Backend service for the CafeSync application, engineered with a focus on system stability, latency tracking, and technical risk mitigation.
+A small but production-leaning cafe ordering system with four roles
+(admin, barista, user, viewer), four authentication methods, full RBAC,
+and end-to-end browser tests.
+
+## Live demo
+
+https://cafesync-XXXX.onrender.com — log in with `admin/admin` to see
+the operations dashboard, or sign up as a fresh user to order from the menu.
+
+## What's in the box
+
+### Authentication
+- **Password** — bcrypt-hashed, with timing-safe checks
+- **TOTP** — Google Authenticator compatible (RFC 6238)
+- **Backup codes** — 10 per user, single-use, regeneratable
+- **Passkeys** — WebAuthn / FIDO2 via the `webauthn` library
+
+### Authorization
+- Four roles: `admin`, `barista`, `user`, `viewer`
+- Server-side checks on every endpoint (UI hiding is not security)
+- Admin dashboard for dynamic role changes
+- Last-admin and self-modification safeguards
+
+### Hardening
+See [SECURITY.md](SECURITY.md) for the full threat model.
+- Rate limits on auth routes (5/min login, 3/min signup)
+- CSRF tokens on every mutating request
+- CSP with per-request nonces
+- Strict cookies (httponly + secure + samesite in production)
+- HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy
+- Generic 500 responses (no stack-trace info leakage)
+
+### Tests
+- **143 unit tests, 92.3% coverage** (`pytest --cov`)
+- **Playwright end-to-end** that walks through every feature in one
+  sequential story (signup → order → admin promote → barista serve →
+  viewer hidden controls → 2FA setup → backup-code login → reuse rejected)
+
+### CI/CD
+- GitHub Actions runs tests on every push
+- Render auto-deploys ONLY after tests pass
+
+## Local development
+
+```bash
+# install deps
+pip install -r requirements-dev.txt
+playwright install chromium
+
+# .env (see .env.example or below)
+cp .env.example .env
+
+# start the server
+uvicorn main:app --reload
+```
+
+Required `.env` variables:
+```
+SESSION_SECRET=<random 32+ char string>
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin
+RP_ID=localhost
+RP_NAME=CafeSync
+WEBAUTHN_ORIGINS=http://localhost:8000
+```
+
+## Running tests
+
+```bash
+pytest --cov                # unit + coverage
+pytest tests/e2e/ --headed  # end-to-end, watch the browser
+```
+
+For Playwright tests, uvicorn must be running in another terminal.
 
 ## Architecture
 
-*   **Framework:** Python 3.10+ & FastAPI
-*   **Database:** Microsoft SQL Server (Containerized via Docker)
-*   **ORM:** SQLAlchemy with `pyodbc`
-*   **Monitoring:** Custom middleware for API latency and database transaction logging
+```
+main.py              FastAPI app + middleware (auth gate, telemetry, security)
+security.py          Rate limiter, CSRF, security headers, CSP nonces
+auth_utils.py        Password hashing, TOTP, backup codes
+models.py            SQLAlchemy models
+roles.py             The 4-role definitions
+routers/
+  auth.py            Login, signup, logout
+  twofa.py           TOTP setup + challenge flow
+  passkeys.py        WebAuthn register + authenticate
+  orders.py          POST orders, GET queue, PUT complete
+  users.py           Admin user management
+  telemetry.py       Metrics + recent logs
+templates/           Jinja2 HTML
+static/              CSS, JS, menu data
+tests/
+  unit/              79 fast tests, no browser
+  e2e/               1 sequential Playwright journey
+```
 
-## Pod 2 Responsibilities (Technical Monitoring)
+## Deployment
 
-This repository fulfills the Technical Monitoring requirements of the project:
-1.  **Lead Development:** Maintainable MVC architecture and strict typing.
-2.  **Operations tracking:** Monitoring system uptime, 500 error rates, and API response times.
-3.  **QA/Testing:** Mitigating technical debt and ensuring reliable database pooling under load.
-
-## Environment Setup (Ubuntu / Linux)
-
-### 1. System Dependencies
-You must install the Microsoft ODBC Driver 18 to interface with SQL Server.
-```bash
-curl [https://packages.microsoft.com/keys/microsoft.asc](https://packages.microsoft.com/keys/microsoft.asc) | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
-curl [https://packages.microsoft.com/config/ubuntu/$(lsb_release](https://packages.microsoft.com/config/ubuntu/$(lsb_release) -rs)/prod.list | sudo tee /etc/apt/sources.list.d/mssql-release.list
-sudo apt-get update
-sudo ACCEPT_EULA=Y apt-get install -y msodbcsql18 unixodbc-dev
+Deployed to Render via the `render.yaml` Blueprint. Deploys are triggered
+only by the GitHub Actions workflow after tests pass (Render's
+auto-deploy is intentionally disabled).
