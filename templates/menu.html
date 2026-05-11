@@ -66,6 +66,10 @@
             <a href="/dashboard" class="btn btn-sm btn-outline-info">
                 <i class="bi bi-speedometer2 me-1"></i>Dashboard
             </a>
+            {% elif role == 'barista' %}
+            <a href="/dashboard" class="btn btn-sm btn-outline-info">
+                <i class="bi bi-cup-hot me-1"></i>Barista Station
+            </a>
             {% endif %}
             <span class="badge bg-primary role-badge">{{ role }}</span>
             <span class="text-muted small">
