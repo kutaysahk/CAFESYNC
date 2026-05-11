@@ -1,6 +1,7 @@
 # Multi-stage isn't needed for our app — single stage keeps things simple.
-# Python 3.11-slim is small (~150MB) and has good compatibility with our deps.
-FROM python:3.11-slim
+# Python 3.10-slim matches the local development environment, avoiding
+# subtle 3.10 vs 3.11 differences (type hint syntax, asyncio behavior, etc.)
+FROM python:3.10-slim
 
 # Don't write .pyc files, don't buffer output (so logs show up immediately
 # in Render's log viewer).

@@ -9,5 +9,9 @@ pyotp
 qrcode[pil]
 webauthn
 
+# Template engine. FastAPI's Jinja2Templates wrapper needs this; on slim
+# Docker images it's not pre-installed.
+jinja2
+
 # Hardening
 slowapi
