@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CafeSync | 2FAITH4AI Technical Protocol</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        :root {
+            --bg: #030205;
+            --platinum: #e5e7eb;
+            --silver: #9ca3af;
+            --abyssal-gradient: radial-gradient(circle at center, #0d0d14 0%, #030205 100%);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: #f3f4f6;
+            font-family: 'Urbanist', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #abyss-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ── Boot Screen ── */
+        #boot-screen {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .log-line {
+            color: var(--platinum);
+            font-size: 16px;
+            margin-bottom: 8px;
+            opacity: 0.6;
+            width: 100%;
+            text-align: left;
+            max-width: 620px;
+            letter-spacing: 1px;
+        }
+
+        /* ── Summon ── */
+        #summon-container {
+            position: fixed;
+            inset: 0;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            background: var(--abyssal-gradient);
+        }
+
+        .flash {
+            position: absolute;
+            inset: 0;
+            background: #fff;
+            opacity: 0;
+            z-index: 10005;
+        }
+
+        .flash-active { animation: silver-bang 1.2s ease-out forwards; }
+
+        @keyframes silver-bang {
+            0%   { opacity: 0; }
+            10%  { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        #star-reveal {
+            position: relative;
+            z-index: 10003;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+            transform: scale(0.1);
+            text-align: center;
+        }
+
+        .star-active { animation: platinum-burst 5s cubic-bezier(0.15, 0, 0.15, 1) forwards; }
+
+        @keyframes platinum-burst {
+            0%   { opacity: 0; transform: scale(0.1) rotate(-45deg); filter: brightness(10); }
+            15%  { opacity: 1; transform: scale(3.5) rotate(0deg);   filter: brightness(2); }
+            80%  { opacity: 1; filter: blur(0px); transform: scale(3.2); }
+            100% { opacity: 0; filter: blur(40px); transform: scale(5); }
+        }
+
+        .star-svg {
+            width: 400px;
+            height: 400px;
+            fill: url(#platinumGradient);
+            filter: drop-shadow(0 0 60px rgba(255,255,255,0.5));
+        }
+
+        .team-name-summon {
+            margin-top: 15px;
+            font-size: 16px;
+            font-weight: 900;
+            letter-spacing: 18px;
+            color: #fff;
+            text-transform: uppercase;
+            text-shadow: 0 0 20px rgba(255,255,255,0.8);
+            opacity: 0.9;
+        }
+
+        /* ── Presentation ── */
+        #presentation-wrapper {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            display: none;
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 50px 60px 110px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease-in-out;
+            overflow-y: auto;
+        }
+
+        .slide.active  { opacity: 1; pointer-events: auto; }
+        .slide-content { max-width: 1200px; width: 100%; padding-top: 10px; }
+
+        /* center the intro slide vertically */
+        .slide.center-v { align-items: center; }
+
+        /* ── Dock ── */
+        .dashboard-dock {
+            position: fixed;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            background: rgba(255,255,255,0.02);
+            backdrop-filter: blur(25px);
+            padding: 10px 18px;
+            border-radius: 50px;
+            border: 1px solid rgba(255,255,255,0.08);
+            z-index: 100;
+        }
+
+        .nav-btn {
+            padding: 7px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            background: transparent;
+            color: #6b7280;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            transition: 0.3s;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            background: rgba(255,255,255,0.9);
+            color: #000;
+            border-color: #fff;
+        }
+
+        /* ── Design Language ── */
+        .platinum-text {
+            background: linear-gradient(135deg, #fff 0%, #9ca3af 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 22px;
+            border-radius: 4px;
+        }
+
+        .label {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #6b7280;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .metric-val { font-size: 2.8rem; font-weight: 700; color: #fff; }
+
+        .bonus-badge {
+            font-size: 11px;
+            color: #000;
+            background: var(--platinum);
+            padding: 3px 8px;
+            border-radius: 2px;
+            font-weight: 900;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .shake { animation: impact-shake 0.5s both; }
+
+        @keyframes impact-shake {
+            0%,100% { transform: translate(0,0); }
+            20%      { transform: translate(-10px,0); }
+            40%      { transform: translate(10px,0); }
+            60%      { transform: translate(-5px,0); }
+            80%      { transform: translate(5px,0); }
+        }
+
+        /* ── Pipeline diagram ── */
+        .pipeline {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .pipeline-step {
+            border-left: 2px solid rgba(255,255,255,0.12);
+            padding: 8px 18px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .pipeline-step .step-label { color: #fff; font-size: 15px; font-weight: 700; }
+        .pipeline-step .step-note  { color: #4b5563; font-size: 13px; margin-top: 3px; }
+
+        .pipeline-arrow {
+            padding: 3px 18px;
+            color: #374151;
+            font-size: 14px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ── RBAC table ── */
+        .role-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+
+        .role-table th {
+            background: rgba(255,255,255,0.04);
+            color: var(--silver);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 12px;
+            padding: 11px 14px;
+            border: 1px solid rgba(255,255,255,0.08);
+            text-align: center;
+        }
+
+        .role-table td {
+            border: 1px solid rgba(255,255,255,0.06);
+            padding: 11px 14px;
+            text-align: center;
+            color: #6b7280;
+        }
+
+        .role-table td:first-child {
+            text-align: left;
+            font-family: 'JetBrains Mono', monospace;
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .check { color: #4ade80; font-weight: 700; }
+        .dash  { color: #374151; }
+
+        /* ── Visual recommendation callout ── */
+        .visual-rec {
+            border: 1px dashed rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.01);
+            padding: 11px 16px;
+            margin-top: 18px;
+            font-size: 13px;
+            color: #4b5563;
+            font-family: 'JetBrains Mono', monospace;
+            border-radius: 4px;
+        }
+
+        .visual-rec::before { content: "[ SCREENSHOT ] "; color: #6b7280; }
+
+        /* ── FAQ ── */
+        .faq-item {
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 18px 0;
+        }
+
+        .faq-item:last-child { border-bottom: none; }
+
+        .faq-q {
+            color: var(--platinum);
+            font-weight: 700;
+            font-size: 17px;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .faq-a {
+            color: #6b7280;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        .faq-tag {
+            display: inline-block;
+            font-size: 11px;
+            color: #000;
+            background: var(--silver);
+            padding: 2px 7px;
+            border-radius: 2px;
+            margin-right: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 900;
+            vertical-align: middle;
+        }
+
+        /* ── Metric grid ── */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+
+        .metric-box {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .metric-box .val  { font-size: 2.4rem; font-weight: 900; color: #fff; display: block; line-height: 1.1; }
+        .metric-box .desc { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: #6b7280; margin-top: 8px; display: block; }
+
+        /* ── Tag pills ── */
+        .tag-pill {
+            display: inline-block;
+            padding: 5px 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            font-size: 13px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--silver);
+            margin: 4px;
+        }
+
+        /* ── Threat strip ── */
+        .threat-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 13px 18px;
+            background: rgba(255,255,255,0.01);
+            border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: #4b5563;
+            margin-top: 14px;
+        }
+
+        .threat-strip span { color: var(--silver); }
+        /* ── Projector: scale up Tailwind text utilities ── */
+        .text-xs   { font-size: 0.9rem  !important; line-height: 1.6 !important; }
+        .text-sm   { font-size: 1.05rem !important; line-height: 1.7 !important; }
+        .text-base { font-size: 1.15rem !important; }
+        .text-xl   { font-size: 1.4rem  !important; }
+        .text-4xl  { font-size: 2.6rem  !important; }
+        .text-9xl  { font-size: 6.5rem  !important; }
+        .tracking-widest { letter-spacing: 0.25em !important; }
+    </style>
+</head>
+<body>
+
+<canvas id="abyss-canvas"></canvas>
+
+<!-- Boot Screen -->
+<div id="boot-screen">
+    <div id="log-terminal"></div>
+</div>
+
+<!-- Summon Animation -->
+<div id="summon-container">
+    <div id="flash" class="flash"></div>
+    <div id="star-reveal">
+        <svg class="star-svg" viewBox="0 0 100 100">
+            <defs>
+                <linearGradient id="platinumGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%"   style="stop-color:#ffffff;stop-opacity:1" />
+                    <stop offset="50%"  style="stop-color:#e5e7eb;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#9ca3af;stop-opacity:1" />
+                </linearGradient>
+            </defs>
+            <path d="M50 0 L55 45 L100 50 L55 55 L50 100 L45 55 L0 50 L45 45 Z" />
+        </svg>
+        <h2 class="team-name-summon">2FAITH4AI</h2>
+    </div>
+</div>
+
+<!-- Presentation Wrapper -->
+<div id="presentation-wrapper">
+
+    <!-- Navigation Dock -->
+    <div class="dashboard-dock">
+        <button class="nav-btn active" onclick="gotoSlide(0)">Intro</button>
+        <button class="nav-btn" onclick="gotoSlide(1)">Architecture</button>
+        <button class="nav-btn" onclick="gotoSlide(2)">Defense I</button>
+        <button class="nav-btn" onclick="gotoSlide(3)">Defense II</button>
+        <button class="nav-btn" onclick="gotoSlide(4)">Defense III</button>
+        <button class="nav-btn" onclick="gotoSlide(5)">Auth &amp; 2FA</button>
+        <button class="nav-btn" onclick="gotoSlide(6)">RBAC</button>
+        <button class="nav-btn" onclick="gotoSlide(7)">QA</button>
+        <button class="nav-btn" onclick="gotoSlide(8)">Infra</button>
+        <button class="nav-btn" onclick="gotoSlide(9)">Summary</button>
+        <button class="nav-btn" onclick="gotoSlide(10)">FAQ</button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         SLIDE 0 — Introduction
+    ══════════════════════════════════════════════════════ -->
+    <section class="slide center-v active">
+        <div class="slide-content text-center">
+            <span class="label" style="letter-spacing:4px;">2FAITH4AI &nbsp;·&nbsp; TECHNICAL DIVISION</span>
+            <h1 style="font-size:6rem;font-weight:900;letter-spacing:-0.03em;margin:12px 0 8px;"
+                class="platinum-text">CAFESYNC</h1>
+            <p style="font-size:1.35rem;color:#6b7280;letter-spacing:0.4em;text-transform:uppercase;margin-bottom:32px;">
+                Authenticated Point-of-Sale — Production Hardened
+            </p>
+
+            <div class="flex justify-center gap-4 mb-8">
+                <div class="tag-pill">FastAPI · Uvicorn ASGI</div>
+                <div class="tag-pill">SQLAlchemy · SQLite</div>
+                <div class="tag-pill">WebAuthn · TOTP · RBAC</div>
+            </div>
+
+            <div class="card" style="max-width:700px;margin:0 auto;text-align:left;">
+                <span class="label">Mission Statement</span>
+                <p style="color:#9ca3af;font-size:0.95rem;line-height:1.7;">
+                    A role-stratified Point-of-Sale system engineered with <strong style="color:#fff;">defense-in-depth</strong>:
+                    rate limiting, CSRF guards, RBAC dependency injection, and ORM parameterization each
+                    operate independently — an attacker bypassing one layer still faces the complete remaining chain.
+                </p>
+            </div>
+
+            <div class="visual-rec">
+                Insert screenshot of the running /menu page (order placement UI) and /dashboard (admin panel side-by-side).
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════
+         SLIDE 1 — System Architecture & Design Philosophy
+    ══════════════════════════════════════════════════════ -->
+    <section class="slide">
+        <div class="slide-content">
+            <h2 class="text-4xl font-bold mb-2 platinum-text">System Architecture</h2>
+            <p class="text-sm text-gray-500 mb-8 tracking-widest uppercase">ASGI Middleware Chain · Server-Side Rendering · Layered Trust Model</p>
+
+            <div class="grid grid-cols-2 gap-6">
+
+                <!-- Pipeline -->
+                <div class="card">
+                    <span class="label">Request Lifecycle — Middleware Chain</span>
+                    <div class="pipeline mt-2">
+                        <div class="pipeline-step">
+                            <div class="step-label">CLIENT REQUEST</div>
+                        </div>
+                        <div class="pipeline-arrow">↓</div>
+                        <div class="pipeline-step">
+                            <div class="step-label">Security Headers Middleware</div>
+                            <div class="step-note">CSP nonce generated per-request and injected here</div>
+                        </div>
+                        <div class="pipeline-arrow">↓</div>
+                        <div class="pipeline-step">
+                            <div class="step-label">SlowAPI Rate Limiter</div>
+                            <div class="step-note">Per-IP, per-endpoint limits; respects proxy headers</div>
+                        </div>
+                        <div class="pipeline-arrow">↓</div>
+                        <div class="pipeline-step">
+                            <div class="step-label">Session / Auth Gate</div>
+                            <div class="step-note">itsdangerous cookie verification; expiry check</div>
+                        </div>
+                        <div class="pipeline-arrow">↓</div>
+                        <div class="pipeline-step">
+                            <div class="step-label">CSRF Middleware</div>
+                            <div class="step-note">Constant-time 256-bit token comparison (POST/PUT/DELETE)</div>
+                        </div>
+                        <div class="pipeline-arrow">↓</div>
+                        <div class="pipeline-step">
+                            <div class="step-label">FastAPI Route Handler</div>
+                            <div class="step-note">Role dependency injected (require_admin / require_fulfillment)</div>
+                        </div>
+                        <div class="pipeline-arrow">↓</div>
+                        <div class="pipeline-step">
+                            <div class="step-label">SQLAlchemy ORM</div>
+                            <div class="step-note">Parameterized queries only — zero raw SQL strings</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right column -->
+                <div class="flex flex-col gap-4">
+                    <div class="card">
+                        <span class="label">Backend Stack</span>
+                        <p class="text-gray-400 text-sm leading-relaxed">
+                            <strong class="text-white">FastAPI + Uvicorn</strong> — Python ASGI framework with async request handling.
+                            Dependency Injection pattern enforces authorization at the router level, not the controller.
+                            <strong class="text-white">SQLAlchemy ORM</strong> abstracts all database interaction with parameterized queries.
+                        </p>
+                    </div>
+                    <div class="card">
+                        <span class="label">Frontend Stack</span>
+                        <p class="text-gray-400 text-sm leading-relaxed">
+                            <strong class="text-white">Jinja2 Server-Side Rendering</strong> — chosen deliberately over a SPA framework.
+                            Eliminates the CORS attack surface entirely and ensures no authentication token
+                            is ever stored in <code style="color:#9ca3af;">localStorage</code>.
+                            CSP nonce validation blocks injected scripts regardless of origin.
+                        </p>
+                    </div>
+                    <div class="card" style="background:rgba(255,255,255,0.04);">
+                        <span class="label">Design Philosophy</span>
+                        <p class="text-gray-400 text-sm leading-relaxed">
+                            Every security control is <strong class="text-white">independently effective</strong>.
+                            UI hiding is a UX convenience — the server enforces all permissions via signed sessions
+                            and dependency injection, even against a raw HTTP client.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="visual-rec">
+                Insert screenshot of main.py lines showing app.add_middleware() registrations stacked in order.
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════
+         SLIDE 2 — Technical Deep-Dive I: Perimeter Defense
+    ══════════════════════════════════════════════════════ -->
+    <section class="slide">
+        <div class="slide-content">
+            <h2 class="text-4xl font-bold mb-2 platinum-text">Perimeter Hardening</h2>
+            <p class="text-sm text-gray-500 mb-8 tracking-widest uppercase">Rate Limiting · CSRF · Content Security Policy · Security Headers</p>
+
+            <div class="grid grid-cols-3 gap-5">
+
+                <div class="card">
+                    <span class="label">Asynchronous Rate Limiter</span>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                        <strong class="text-white">SlowAPI</strong> middleware enforces per-IP request budgets.
+                        Custom client-IP extraction respects <code style="color:#9ca3af;">Fly-Client-IP</code> reverse-proxy headers.
+                        Localhost requests receive unique per-request keys to avoid false positives in development.
+                    </p>
+                    <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#6b7280;">
+                        <div>POST /login → <span style="color:#fff;">5 / min / IP</span></div>
+                        <div>POST /signup → <span style="color:#fff;">3 / min / IP</span></div>
+                        <div>POST /login/2fa → <span style="color:#fff;">5 / min / IP</span></div>
+                        <div>Default global → <span style="color:#fff;">100 / min</span></div>
+                    </div>
+                    <p class="text-xs text-gray-600 mt-3">Returns generic HTTP 429 with zero info leakage.</p>
+                </div>
+
+                <div class="card">
+                    <span class="label">CSRF Token Architecture</span>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                        Per-session <strong class="text-white">256-bit token</strong> via <code style="color:#9ca3af;">secrets.token_urlsafe(32)</code>.
+                        Validated using <code style="color:#9ca3af;">secrets.compare_digest</code> — constant-time comparison
+                        to defeat timing side-channel attacks. Accepted via form field <em>or</em>
+                        <code style="color:#9ca3af;">X-CSRF-Token</code> header.
+                    </p>
+                    <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#6b7280;">
+                        <div>GET / HEAD / OPTIONS → <span style="color:#4ade80;">EXEMPT (RFC 7231)</span></div>
+                        <div>POST / PUT / DELETE → <span style="color:#fff;">TOKEN REQUIRED</span></div>
+                    </div>
+                    <p class="text-xs text-gray-600 mt-3">Verified end-to-end in Playwright E2E test suite.</p>
+                </div>
+
+                <div class="card">
+                    <span class="label">Content Security Policy — Nonce Strategy</span>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                        A cryptographic nonce is generated fresh on <strong class="text-white">every request</strong>
+                        by the security headers middleware and injected into every
+                        <code style="color:#9ca3af;">&lt;script nonce="…"&gt;</code> tag.
+                        This permits legitimate inline scripts while rendering injected XSS payloads inert.
+                    </p>
+                    <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#6b7280;line-height:1.8;">
+                        <div>default-src → <span style="color:#fff;">'self'</span></div>
+                        <div>script-src → <span style="color:#fff;">'self' 'nonce-{N}' cdn.jsdelivr.net</span></div>
+                        <div>frame-ancestors → <span style="color:#fff;">'none'</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="threat-strip mt-5">
+                <span>X-Frame-Options: DENY</span>
+                &nbsp;·&nbsp;
+                <span>HSTS: max-age=31536000; includeSubDomains</span>
+                &nbsp;·&nbsp;
+                <span>Referrer-Policy: strict-origin-when-cross-origin</span>
+                &nbsp;·&nbsp;
+                <span>Permissions-Policy: geolocation=(), microphone=(), camera=()</span>
+                &nbsp;·&nbsp;
+                <span>X-Content-Type-Options: nosniff</span>
+            </div>
+
+            <div class="visual-rec">
+                Insert screenshot of security.py — add_security_headers() middleware and require_csrf dependency function.
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════
+         SLIDE 3 — Technical Deep-Dive II: Credential & Session Security
+    ══════════════════════════════════════════════════════ -->
+    <section class="slide">
+        <div class="slide-content">
+            <h2 class="text-4xl font-bold mb-2 platinum-text">Credential & Session Security</h2>
+            <p class="text-sm text-gray-500 mb-8 tracking-widest uppercase">bcrypt Hardening · Timing-Attack Mitigation · Session Lifecycle</p>
+
+            <div class="grid grid-cols-2 gap-6">
+
+                <div class="card">
+                    <span class="label">bcrypt Parameterization</span>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                        All passwords are hashed with <strong class="text-white">bcrypt at cost factor 12</strong>.
+                        An explicit <strong class="text-white">72-byte truncation guard</strong> prevents the bcrypt
+                        password-length vulnerability — passwords exceeding 72 bytes are rejected at registration,
+                        not silently truncated.
+                    </p>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        Unknown-username login paths execute a <strong class="text-white">dummy bcrypt hash</strong>
+                        against a static sentinel value — ensuring the response latency is indistinguishable
+                        from a real hash verification.  This closes the timing side-channel that would otherwise
+                        confirm username existence.
+                    </p>
+                    <div class="flex gap-3 mt-4" style="font-family:'JetBrains Mono',monospace;font-size:14px;">
+                        <div class="tag-pill">rounds = 12</div>
+                        <div class="tag-pill">max_len = 72 bytes</div>
+                        <div class="tag-pill">dummy hash on miss</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <span class="label">Session Lifecycle Management</span>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                        Sessions are signed with <strong class="text-white">itsdangerous.URLSafeTimedSerializer</strong>
+                        using a 256-bit <code style="color:#9ca3af;">SESSION_SECRET</code> environment variable.
+                        An <code style="color:#9ca3af;">expires_at</code> timestamp is stored inside the session
+                        and re-validated on every request by the auth-gate middleware — a tampered expiry is detected
+                        because the signature would not verify.
+                    </p>
+                    <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#6b7280;line-height:2;">
+                        <div>Production cookie flags:</div>
+                        <div>&nbsp;&nbsp;https_only = <span style="color:#4ade80;">True</span></div>
+                        <div>&nbsp;&nbsp;same_site = <span style="color:#4ade80;">"strict"</span></div>
+                        <div>&nbsp;&nbsp;signed = <span style="color:#4ade80;">itsdangerous HMAC</span></div>
+                        <div>&nbsp;&nbsp;TTL = <span style="color:#fff;">8 h</span> / <span style="color:#fff;">30 d</span> (Remember Me)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-5" style="background:rgba(255,255,255,0.04);">
+                <span class="label">Technical Justification</span>
+                <p class="text-gray-500 text-xs leading-relaxed italic">
+                    The dummy-hash approach costs one bcrypt operation per failed login for an unknown username — an
+                    intentional performance cost that buys a meaningful security guarantee.  Without it, an attacker
+                    performs user enumeration in O(n) network requests by measuring response time differentials,
+                    reducing the search space before a brute-force campaign.
+                </p>
+            </div>
+
+            <div class="visual-rec">
+                Insert screenshot of auth_utils.py — hash_password() 72-byte guard and verify_password() dummy-hash branch.
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════
+         SLIDE 4 — Technical Deep-Dive III: Data Layer & Error Hardening
+    ══════════════════════════════════════════════════════ -->
+    <section class="slide">
+        <div class="slide-content">
+            <h2 class="text-4xl font-bold mb-2 platinum-text">Data Layer Integrity</h2>
+            <p class="text-sm text-gray-500 mb-8 tracking-widest uppercase">SQL Injection Prevention · Error Disclosure · Schema Boundary Validation</p>
+
+            <div class="grid grid-cols-3 gap-5">
+
+                <div class="card">
+                    <span class="label">Parameterized ORM Queries</span>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-3">
+                        <strong class="text-white">SQLAlchemy ORM exclusively</strong> — zero raw SQL strings
+                        exist anywhere in the codebase.  All user-supplied values pass through SQLAlchemy's
+                        bound-parameter mechanism, preventing both classic and second-order SQL injection
+                        regardless of the database engine.
+                    </p>
+                    <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#4b5563;">
+                        db.query(User)<br>
+                        &nbsp;&nbsp;.filter(User.username == username)<br>
+                        &nbsp;&nbsp;.first()
+                    </div>
+                    <p class="text-xs text-gray-600 mt-3">Portable guarantee — survives migration to SQL Server.</p>
+                </div>
+
+                <div class="card">
+                    <span class="label">Error Disclosure Prevention</span>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-3">
+                        A global exception handler in <code style="color:#9ca3af;">main.py</code> intercepts all
+                        unhandled exceptions. When <code style="color:#9ca3af;">DEBUG_ERRORS ≠ 1</code>
+                        (production default), the response body is <strong class="text-white">always</strong>:
+                    </p>
+                    <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#4ade80;">
+                        {"detail": "Internal server error"}
+                    </div>
+                    <p class="text-gray-400 text-sm leading-relaxed mt-3">
+                        Stack traces, module paths, and database error messages are never transmitted to the client,
+                        preventing reconnaissance via error-driven enumeration.
+                    </p>
+                </div>
+
+                <div class="card">
+                    <span class="label">Schema Validation at System Boundary</span>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-3">
+                        <strong class="text-white">Pydantic v2 models</strong> enforce type, length, and format
+                        constraints on every API input before it reaches business logic.
+                        Malformed payloads (oversized strings, wrong types, missing fields) are rejected
+                        at the framework deserialization layer with a structured 422 response.
+                    </p>
+                    <p class="text-gray-500 text-xs leading-relaxed">
+                        Combined with ORM parameterization, this creates a dual-layer defense:
+                        Pydantic rejects structurally invalid input; SQLAlchemy neutralizes any surviving
+                        SQL metacharacters.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card mt-5" style="background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.08);">
+                <span class="label">Defense-in-Depth Principle</span>
+                <p class="text-gray-500 text-xs italic leading-relaxed">
+                    Even if a route handler contained a logic bug, the ORM layer prevents injection.
+                    Even if injection succeeded, the generic error handler prevents stack-trace disclosure.
+                    No single vulnerability results in full compromise — each layer degrades the attacker's information gain.
+                </p>
+            </div>
+
+            <div class="visual-rec">
+                Insert screenshot of main.py global exception handler and schemas.py Pydantic model showing Field(max_length=…) validators.
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════
+         SLIDE 5 — Advanced Authentication & 2FA
+    ══════════════════════════════════════════════════════ -->
+    <section class="slide">
+        <div class="slide-content">
+            <h2 class="text-4xl font-bold mb-2 platinum-text">
+                Multi-Vector Authentication
+                <span class="bonus-badge">BONUS</span>
+            </h2>
+            <p class="text-sm text-gray-500 mb-8 tracking-widest uppercase">TOTP · Backup Codes · WebAuthn / FIDO2 Passkeys</p>
+
+            <div class="grid grid-cols-3 gap-5">
+
+                <div class="card">
+                    <span class="label">TOTP — RFC 6238</span>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-3">
+                        Implemented via <strong class="text-white">pyotp.TOTP</strong> with a 30-second window and
+                        ±1 step tolerance for clock skew.  Setup flow: server generates a TOTP secret → renders
+                        a QR code PNG → user scans with Google Authenticator.  Challenge is gated in a separate
+                        <code style="color:#9ca3af;">pending_login</code> session state with a <strong class="text-white">5-minute TTL</strong>.
+                        Rate-limited at 5 attempts/min/IP.
+                    </p>
+                    <div class="flex items-end gap-2 mt-2">
+                        <span class="metric-val" style="font-size:2.2rem;">30s</span>
+                        <span class="text-xs text-gray-500 mb-1">WINDOW · RFC 6238</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <span class="label">Backup Codes</span>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-3">
+                        10 single-use recovery codes are generated per user on 2FA setup.
+                        Each code is <strong class="text-white">hashed with bcrypt</strong> before storage —
+                        plaintext is shown exactly once at generation time.  On redemption, the
+                        <code style="color:#9ca3af;">used</code> flag and <code style="color:#9ca3af;">used_at</code>
+                        timestamp are recorded atomically, enforcing single-use semantics.
+                        Regeneration invalidates all previous codes immediately.
+                    </p>
+                    <div class="flex items-end gap-2 mt-2">
+                        <span class="metric-val" style="font-size:2.2rem;">10</span>
+                        <span class="text-xs text-gray-500 mb-1">CODES · BCRYPT-HASHED · SINGLE-USE</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <span class="label">WebAuthn / FIDO2 Passkeys</span>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-3">
+                        Passwordless login via hardware security keys or device biometrics (Touch ID, Windows Hello).
+                        The credential's <strong class="text-white">public key</strong> is stored as a
+                        <code style="color:#9ca3af;">LargeBinary</code> field.  On every authentication, the
+                        presented <strong class="text-white">sign_count</strong> must exceed the stored value —
+                        a cloned credential presents a stale counter and is rejected, preventing replay attacks.
+                        Origin binding to <code style="color:#9ca3af;">RP_ID</code> blocks cross-domain credential
+                        presentation.
+                    </p>
+                    <div class="flex items-end gap-2 mt-2">
+                        <span class="metric-val" style="font-size:2.2rem;">FIDO2</span>
+                        <span class="text-xs text-gray-500 mb-1">SIGN-COUNT REPLAY GUARD</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="threat-strip mt-5">
+                <span>Auth Factor 1: bcrypt password (rounds=12, 72-byte guard)</span>
+                &nbsp;·&nbsp;
+                <span>Auth Factor 2: TOTP (pyotp, RFC 6238, 5-min challenge TTL)</span>
+                &nbsp;·&nbsp;
+                <span>Auth Factor 3: WebAuthn Passkey (FIDO2 L2, sign-count verified)</span>
+                &nbsp;·&nbsp;
+                <span>Recovery: bcrypt-hashed backup codes (single-use)</span>
+            </div>
+
+            <div class="visual-rec">
+                Insert screenshot of the TOTP QR code setup page (templates/twofa_setup.html) and the passkey registration UI on the login page.
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════
+         SLIDE 6 — Dynamic Authorization & RBAC
+    ══════════════════════════════════════════════════════ -->
+    <section class="slide">
+        <div class="slide-content">
+            <h2 class="text-4xl font-bold mb-2 platinum-text">
+                Role-Based Access Control
+                <span class="bonus-badge">BONUS</span>
+            </h2>
+            <p class="text-sm text-gray-500 mb-6 tracking-widest uppercase">4-Tier Permission Model · Dependency Injection Enforcement · Admin Dashboard</p>
+
+            <!-- Role Matrix -->
+            <div class="card mb-5">
+                <span class="label">Permission Matrix</span>
+                <table class="role-table mt-2">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left;">Role</th>
+                            <th>Place Order</th>
+                            <th>Order Queue</th>
+                            <th>Mark Complete</th>
+                            <th>User Mgmt</th>
+                            <th>Telemetry</th>
+                            <th>Template</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>ADMIN</td>
+                            <td><span class="check">✓</span></td>
+                            <td><span class="check">✓</span></td>
+                            <td><span class="check">✓</span></td>
+                            <td><span class="check">✓</span></td>
+                            <td><span class="check">✓</span></td>
+                            <td style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#6b7280;">dashboard.html</td>
+                        </tr>
+                        <tr>
+                            <td>BARISTA</td>
+                            <td><span class="dash">—</span></td>
+                            <td><span class="check">✓</span></td>
+                            <td><span class="check">✓</span></td>
+                            <td><span class="dash">—</span></td>
+                            <td><span class="dash">—</span></td>
+                            <td style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#6b7280;">dashboard_barista.html</td>
+                        </tr>
+                        <tr>
+                            <td>VIEWER</td>
+                            <td><span class="dash">—</span></td>
+                            <td><span class="check">✓</span> read</td>
+                            <td><span class="dash">—</span></td>
+                            <td><span class="dash">—</span></td>
+                            <td><span class="check">✓</span> read</td>
+                            <td style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#6b7280;">dashboard.html</td>
+                        </tr>
+                        <tr>
+                            <td>USER</td>
+                            <td><span class="check">✓</span></td>
+                            <td><span class="dash">—</span></td>
+                            <td><span class="dash">—</span></td>
+                            <td><span class="dash">—</span></td>
+                            <td><span class="dash">—</span></td>
+                            <td style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#6b7280;">menu.html</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="grid grid-cols-2 gap-5">
+                <div class="card">
+                    <span class="label">Dependency Injection Enforcement</span>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        Authorization is enforced via <strong class="text-white">FastAPI's Dependency Injection</strong> system.
+                        Each protected router declares a dependency (<code style="color:#9ca3af;">require_admin</code>,
+                        <code style="color:#9ca3af;">require_fulfillment</code>, <code style="color:#9ca3af;">require_dashboard</code>)
+                        that extracts the role from the signed session and raises HTTP 403 before any business logic executes.
+                        <strong class="text-white">UI hiding is a UX courtesy</strong> — the server rejects unauthorized raw HTTP
+                        requests identically.
+                    </p>
+                </div>
+                <div class="card">
+                    <span class="label">Admin Dashboard Safeguards</span>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-3">
+                        The Admin Dashboard allows runtime role promotion / demotion without a server restart.
+                        Server-side safeguards prevent misuse:
+                    </p>
+                    <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#6b7280;line-height:2;">
+                        <div>• Cannot change own role → <span style="color:#f87171;">HTTP 400</span></div>
+                        <div>• Cannot delete own account → <span style="color:#f87171;">HTTP 400</span></div>
+                        <div>• Cannot demote last ADMIN → <span style="color:#f87171;">HTTP 400</span></div>
+                        <div>• Role takes effect on next request → <span style="color:#4ade80;">no restart needed</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="visual-rec">
+                Insert screenshot of roles.py (role definitions) and auth_utils.py require_admin dependency. Also screenshot of the Admin Dashboard user management panel showing role dropdowns.
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════
+         SLIDE 7 — Quality Assurance & Testing
+    ══════════════════════════════════════════════════════ -->
+    <section class="slide">
+        <div class="slide-content">
+            <h2 class="text-4xl font-bold mb-2 platinum-text">
+                Quality Assurance Protocols
+                <span class="bonus-badge">BONUS</span>
+            </h2>
+            <p class="text-sm text-gray-500 mb-8 tracking-widest uppercase">135 Unit Tests · 90.12% Coverage · Playwright E2E · Auto-Deploy</p>
+
+            <div class="grid grid-cols-2 gap-6 mb-5">
+
+                <div class="card">
+                    <span class="label">Unit Test Suite</span>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                        8 test modules covering all routers, utilities, and middleware.
+                        <strong class="text-white">pytest-cov</strong> with <code style="color:#9ca3af;">fail_under=90</code>
+                        in <code style="color:#9ca3af;">.coveragerc</code> — the CI pipeline fails if coverage drops below
+                        the threshold.  Test isolation: a fresh <strong class="text-white">in-memory SQLite database</strong>
+                        is provisioned per test via <code style="color:#9ca3af;">conftest.py</code> fixtures.
+                        Rate limiting and CSRF are disabled via env vars in test scope.
+                    </p>
+                    <div class="flex items-end gap-3">
+                        <span class="metric-val">90.12%</span>
+                        <div>
+                            <div class="text-xs text-green-400">CODE COVERAGE</div>
+                            <div class="text-xs text-gray-600">135 TESTS PASSING</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <span class="label">Playwright E2E Journey</span>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">
+                        A single sequential browser-driven test covers <strong class="text-white">19 critical scenarios</strong>:
+                        user signup, order placement, admin login, role promotion (user → barista → viewer),
+                        self-protection guard verification, TOTP setup, QR code scanning simulation, backup-code
+                        capture, single-use enforcement, and passkey UI presence.
+                        Runs headless in CI; supports <code style="color:#9ca3af;">--headed --slowmo</code> for debugging.
+                    </p>
+                    <div class="flex items-end gap-3">
+                        <span class="metric-val">100%</span>
+                        <div>
+                            <div class="text-xs text-green-400">E2E PASS RATE</div>
+                            <div class="text-xs text-gray-600">19 SCENARIOS</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="background:rgba(255,255,255,0.03);">
+                <span class="label">Render.com Auto-Deploy Pipeline</span>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    Every push to the <code style="color:#9ca3af;">main</code> branch triggers a
+                    <strong class="text-white">Docker container rebuild</strong> on Render.com (configured via
+                    <code style="color:#9ca3af;">render.yaml</code>).  A health check at
+                    <code style="color:#9ca3af;">/health</code> gates traffic — the old container continues
+                    serving until the new one passes.  <code style="color:#9ca3af;">HTTPS_ONLY=1</code> is set as
+                    an encrypted env var, activating HSTS and secure cookie flags automatically in production.
+                </p>
+            </div>
+
+            <div class="visual-rec">
+                Insert terminal screenshot of `pytest --cov --cov-report=term-missing` showing 90%+ per-module. Also screenshot of Playwright running in headed mode showing browser navigation.
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════
+         SLIDE 8 — Infrastructure Security & Hardening
+    ══════════════════════════════════════════════════════ -->
+    <section class="slide">
+        <div class="slide-content">
+            <h2 class="text-4xl font-bold mb-2 platinum-text">
+                Infrastructure Security Posture
+                <span class="bonus-badge">BONUS</span>
+            </h2>
+            <p class="text-sm text-gray-500 mb-6 tracking-widest uppercase">Docker Deployment · Secret Injection · HTTPS Hardening · VPS Rationale</p>
+
+            <div class="grid grid-cols-2 gap-6 mb-5">
+
+                <div class="card">
+                    <span class="label">Deployment Architecture</span>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-3">
+                        Application runs inside a <strong class="text-white">Docker container</strong> on Render.com's
+                        Linux host (configured via <code style="color:#9ca3af;">render.yaml</code>).
+                        All secrets (<code style="color:#9ca3af;">SESSION_SECRET</code>,
+                        <code style="color:#9ca3af;">ADMIN_USERNAME</code>,
+                        <code style="color:#9ca3af;">ADMIN_PASSWORD</code>) are injected as
+                        <strong class="text-white">encrypted environment variables</strong> — they never appear in source
+                        code or container images. <code style="color:#9ca3af;">DB_PATH</code> is configurable
+                        to mount a persistent volume on upgrade from the free tier.
+                    </p>
+                    <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#6b7280;line-height:2;">
+                        <div>HTTPS_ONLY=1 → <span style="color:#4ade80;">HSTS · Secure cookie · SameSite=strict</span></div>
+                        <div>DEBUG_ERRORS=0 → <span style="color:#4ade80;">generic 500 responses</span></div>
+                        <div>Health check → <span style="color:#fff;">/health</span> (public, no auth)</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <span class="label">VPS / Self-Managed Host Rationale</span>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-3">
+                        POS compliance requires <strong class="text-white">full auditability of the request path</strong>.
+                        Managed PaaS environments (Vercel, Railway) abstract SSL termination and packet routing —
+                        operators lose visibility into the network layer.  A self-managed Linux host (or Docker
+                        on a VPS) preserves that visibility and enables direct hardening:
+                    </p>
+                    <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#6b7280;line-height:2;">
+                        <div>UFW → deny all inbound except 80/443</div>
+                        <div>Fail2Ban → auto-ban on repeated 401/429</div>
+                        <div>SSH → key-only (PasswordAuthentication no)</div>
+                        <div>Container → non-root user, read-only FS</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="threat-strip">
+                Brute-force: <span>Rate limit (5/min) + Fail2Ban IP ban</span>
+                &nbsp;·&nbsp;
+                MITM: <span>HSTS preload (max-age=31536000)</span>
+                &nbsp;·&nbsp;
+                Session theft: <span>Secure + HttpOnly + SameSite=strict</span>
+                &nbsp;·&nbsp;
+                XSS: <span>CSP nonce per-request</span>
+                &nbsp;·&nbsp;
+                CSRF: <span>256-bit session-bound token</span>
+                &nbsp;·&nbsp;
+                SQLi: <span>ORM parameterization</span>
+                &nbsp;·&nbsp;
+                Info leak: <span>Generic 500 handler</span>
+            </div>
+
+            <div class="visual-rec">
+                Insert screenshot of render.yaml showing env var declarations and HTTPS_ONLY=1. Also screenshot of SECURITY.md threat model table.
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════
+         SLIDE 9 — Summary & Performance Metrics
+    ══════════════════════════════════════════════════════ -->
+    <section class="slide">
+        <div class="slide-content">
+            <h2 class="text-4xl font-bold mb-2 platinum-text">Defense-in-Depth Scorecard</h2>
+            <p class="text-sm text-gray-500 mb-8 tracking-widest uppercase">Metrics · Architecture Summary · Why This System is Robust</p>
+
+            <div class="metric-grid mb-6">
+                <div class="metric-box">
+                    <span class="val">12</span>
+                    <span class="desc">Security Mitigations</span>
+                </div>
+                <div class="metric-box">
+                    <span class="val">90.12%</span>
+                    <span class="desc">Unit Test Coverage</span>
+                </div>
+                <div class="metric-box">
+                    <span class="val">19</span>
+                    <span class="desc">E2E Scenarios</span>
+                </div>
+                <div class="metric-box">
+                    <span class="val">3</span>
+                    <span class="desc">Auth Methods (Pwd · TOTP · FIDO2)</span>
+                </div>
+                <div class="metric-box">
+                    <span class="val">4</span>
+                    <span class="desc">RBAC Roles</span>
+                </div>
+                <div class="metric-box">
+                    <span class="val">6</span>
+                    <span class="desc">Security Headers / Response</span>
+                </div>
+            </div>
+
+            <div class="card mb-5" style="background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.08);">
+                <span class="label">Philosophy — Why No Single Layer is Trusted</span>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    The rate limiter, CSRF guard, RBAC dependency, bcrypt hasher, ORM parameterizer, and generic error
+                    handler are each <strong class="text-white">independently sufficient</strong> for their respective threat class.
+                    An attacker who bypasses the rate limiter still faces a valid CSRF token requirement.
+                    An attacker who forges a CSRF token still faces server-side role enforcement.
+                    An attacker who escalates role still cannot read another user's bcrypt hash.
+                    Compromise of one layer does not cascade.
+                </p>
+            </div>
+
+            <div class="text-center">
+                <div class="tag-pill">FastAPI</div>
+                <div class="tag-pill">ASGI</div>
+                <div class="tag-pill">bcrypt</div>
+                <div class="tag-pill">TOTP RFC 6238</div>
+                <div class="tag-pill">FIDO2 WebAuthn</div>
+                <div class="tag-pill">RBAC DI</div>
+                <div class="tag-pill">SlowAPI</div>
+                <div class="tag-pill">CSP Nonce</div>
+                <div class="tag-pill">HSTS</div>
+                <div class="tag-pill">Playwright</div>
+                <div class="tag-pill">Docker · Render</div>
+            </div>
+
+            <div class="visual-rec">
+                Insert final screenshot of the Admin Dashboard showing the telemetry metrics panel and user management table simultaneously.
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════
+         SLIDE 10 — Technical FAQ
+    ══════════════════════════════════════════════════════ -->
+    <section class="slide">
+        <div class="slide-content">
+            <h2 class="text-4xl font-bold mb-2 platinum-text">Technical FAQ</h2>
+            <p class="text-sm text-gray-500 mb-6 tracking-widest uppercase">5 Advanced Questions — Professor Review Preparation</p>
+
+            <div class="card">
+
+                <div class="faq-item">
+                    <div class="faq-q">
+                        <span class="faq-tag">Q1</span>
+                        How does your rate limiting prevent distributed brute-force attacks, and what is its acknowledged limitation?
+                    </div>
+                    <div class="faq-a">
+                        <strong style="color:#e5e7eb;">SlowAPI</strong> enforces per-IP limits (5 req/min on <code>/login</code>) using an in-memory counter keyed
+                        by client IP, extracted from the <code>Fly-Client-IP</code> proxy header.
+                        <strong style="color:#e5e7eb;">Acknowledged limitation:</strong> the counter resets on process restart and is not shared
+                        across replicas — a distributed attacker splitting requests across IP addresses bypasses per-IP thresholds.
+                        Production mitigation: <strong style="color:#e5e7eb;">Fail2Ban</strong> on the host detects patterns across the 401 log stream and
+                        imposes IP-level bans at the network layer, independent of the application counter.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q">
+                        <span class="faq-tag">Q2</span>
+                        Explain your CSRF protection mechanism and why GET requests are exempt.
+                    </div>
+                    <div class="faq-a">
+                        Every state-changing request (POST/PUT/DELETE) must carry a session-bound
+                        <strong style="color:#e5e7eb;">256-bit token</strong> (<code>secrets.token_urlsafe(32)</code>)
+                        either as a form field or <code>X-CSRF-Token</code> header.
+                        Validation uses <code>secrets.compare_digest</code> — constant-time comparison to defeat timing side-channel attacks.
+                        GET/HEAD/OPTIONS are exempt per <strong style="color:#e5e7eb;">RFC 7231</strong>: safe methods must be idempotent and carry no
+                        state-changing semantics, so exempting them avoids breaking browser prefetch and navigation
+                        without weakening protection where it is actually needed.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q">
+                        <span class="faq-tag">Q3</span>
+                        How does WebAuthn prevent credential replay and cloning attacks?
+                    </div>
+                    <div class="faq-a">
+                        The <code>passkeys</code> table stores a <strong style="color:#e5e7eb;"><code>sign_count</code></strong> integer alongside each credential's public key.
+                        On every successful authentication, the authenticator increments its internal counter and includes the new value
+                        in the signed assertion.  The server <strong style="color:#e5e7eb;">rejects any assertion where the presented sign_count ≤ the stored value</strong> —
+                        a cloned credential will present a stale counter and is rejected immediately.
+                        Additionally, <strong style="color:#e5e7eb;">origin binding</strong> to <code>RP_ID</code> ensures the credential is only accepted
+                        from the exact domain it was registered against, blocking cross-site credential presentation.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q">
+                        <span class="faq-tag">Q4</span>
+                        How do you prevent a compromised BARISTA account from escalating privileges to ADMIN?
+                    </div>
+                    <div class="faq-a">
+                        Authorization is enforced via <strong style="color:#e5e7eb;">FastAPI Dependency Injection</strong>.
+                        The <code>require_admin</code> dependency on <code>/users</code> and <code>/telemetry</code> routes
+                        reads the user's role from the <strong style="color:#e5e7eb;">signed, server-verified session cookie</strong>
+                        and raises HTTP 403 before any business logic executes — even against a raw crafted HTTP request.
+                        The front-end hiding of admin controls is purely a UX layer.
+                        Additionally, the role-change endpoint enforces that a user <strong style="color:#e5e7eb;">cannot modify their own role</strong>,
+                        closing self-escalation via a race condition or social engineering.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q">
+                        <span class="faq-tag">Q5</span>
+                        What is your SQL injection strategy, and does SQLite change the threat model?
+                    </div>
+                    <div class="faq-a">
+                        The application uses <strong style="color:#e5e7eb;">SQLAlchemy ORM exclusively</strong> — zero raw SQL strings
+                        exist anywhere in the codebase; all user-supplied values pass through SQLAlchemy's bound-parameter mechanism.
+                        SQLite does alter the threat model marginally: unlike PostgreSQL, most SQLite drivers do not support
+                        stacked queries via <code>;</code>, reducing potential blast radius.
+                        However, relying on that would be <strong style="color:#e5e7eb;">defense-by-obscurity</strong> —
+                        the ORM parameterization is the authoritative, engine-agnostic control.
+                        This ensures the security guarantee survives a migration to SQL Server
+                        (documented in <code>README.md</code> as the planned production database).
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+</div><!-- /presentation-wrapper -->
+
+<script>
+    const terminal    = document.getElementById('log-terminal');
+    const bootScreen  = document.getElementById('boot-screen');
+    const summon      = document.getElementById('summon-container');
+    const flash       = document.getElementById('flash');
+    const starReveal  = document.getElementById('star-reveal');
+    const main        = document.getElementById('presentation-wrapper');
+    const canvas      = document.getElementById('abyss-canvas');
+    const ctx         = canvas.getContext('2d');
+
+    const sleep = m => new Promise(r => setTimeout(r, m));
+
+    let particles = [];
+
+    function initAbyss() {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+        particles = Array.from({length: 100}, () => ({
+            x:       Math.random() * canvas.width,
+            y:       Math.random() * canvas.height,
+            size:    Math.random() * 1.5,
+            speed:   0.1 + Math.random() * 0.4,
+            opacity: Math.random()
+        }));
+    }
+
+    function drawAbyss() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        particles.forEach(p => {
+            ctx.globalAlpha = p.opacity;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+            p.y -= p.speed;
+            if (p.y < 0) p.y = canvas.height;
+        });
+        requestAnimationFrame(drawAbyss);
+    }
+
+    function gotoSlide(index) {
+        document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.slide')[index].classList.add('active');
+        document.querySelectorAll('.nav-btn')[index].classList.add('active');
+    }
+
+    const diagLines = [
+        'INITIALIZING 2FAITH4AI_KERNEL',
+        'VERIFYING PLAYWRIGHT_E2E_SUITE... 135 TESTS',
+        'TOTP_MFA: RFC6238_ENFORCED · BACKUP_CODES: ACTIVE',
+        'WEBAUTHN_FIDO2: PASSKEY_AUTH_ONLINE',
+        'RBAC_MIDDLEWARE: 4_ROLES_ENFORCED',
+        'COVERAGE_GATE: 90.12%_PASSING_THRESHOLD',
+        'INFRA_SECURITY: HTTPS_ONLY · CSP_NONCE_ACTIVE',
+        'READY FOR TECHNICAL REVIEW'
+    ];
+
+    async function startSequence() {
+        initAbyss();
+        drawAbyss();
+
+        for (let line of diagLines) {
+            const d = document.createElement('div');
+            d.className   = 'log-line';
+            d.textContent = `[CORE] ${line}`;
+            terminal.appendChild(d);
+            await sleep(150);
+        }
+
+        await sleep(1000);
+        bootScreen.style.display = 'none';
+        summon.style.display     = 'flex';
+
+        await sleep(1500);
+        flash.classList.add('flash-active');
+        document.body.classList.add('shake');
+
+        starReveal.style.opacity = '1';
+        starReveal.classList.add('star-active');
+
+        await sleep(5000);
+        summon.style.transition = 'opacity 1s';
+        summon.style.opacity    = '0';
+
+        await sleep(1000);
+        summon.style.display = 'none';
+        main.style.display   = 'block';
+    }
+
+    window.onload   = startSequence;
+    window.onresize = initAbyss;
+</script>
+</body>
+</html>
