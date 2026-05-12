@@ -8,6 +8,7 @@
 A small but production-leaning cafe ordering system with four roles
 (admin, barista, user, viewer), four authentication methods, full RBAC,
 and end-to-end browser tests.
+https://cafesync-jke6.onrender.com
 
 ## Live demo
 
